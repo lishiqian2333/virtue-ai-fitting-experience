@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>
+(() => {
+  const navigation = performance.getEntriesByType('navigation')[0];
+  const isReload = navigation
+    ? navigation.type === 'reload'
+    : performance.navigation && performance.navigation.type === 1;
+  if (isReload) location.replace('../index.html');
+})();
+</script>
 <meta charset="UTF-8">
 <title>户外动态视频 · POC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,9 +39,11 @@
   /* ===== 人物（换装视频主体：序列帧播放） =====
      落地三件套：脚底接触阴影 + 湿地面倒影 + 按场景匹配的人物色调（filter），
      脚线固定在 bottom:150（画面中场景地面的可站立区域） */
-  #person{position:absolute;left:50%;bottom:150px;translate:-50% 0;z-index:10;height:560px;width:480px}
+  #person{position:absolute;left:50%;bottom:150px;translate:-50% 0;z-index:10;height:560px;width:480px;
+    cursor:grab;touch-action:none}
+  #person.dragging{cursor:grabbing}
   #person img{position:absolute;left:50%;bottom:0;translate:-50% 0;max-height:560px;max-width:460px;
-    transition:filter .8s}
+    transition:filter .8s;pointer-events:none}
   #shadow{position:absolute;left:50%;bottom:136px;translate:-50% 0;z-index:9;width:230px;height:32px;
     background:radial-gradient(closest-side, rgba(0,0,0,.72), transparent 72%);filter:blur(6px);
     transition:opacity .8s}
@@ -122,6 +133,13 @@
 
   #wm{position:absolute;right:250px;bottom:120px;z-index:21;font-family:var(--font-num);
     font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  #drag-hint{position:absolute;left:50%;bottom:112px;translate:-50% 0;z-index:21;pointer-events:none;
+    padding:7px 16px;border-radius:999px;border:1px solid rgba(127,216,255,.22);
+    background:rgba(4,12,22,.42);backdrop-filter:blur(8px);font-family:var(--font-num);
+    font-size:11px;letter-spacing:3px;color:rgba(223,242,255,.78);text-shadow:0 1px 6px rgba(0,0,0,.8);
+    transition:color .2s,border-color .2s,background .2s}
+  #drag-hint.active{color:#fff;border-color:rgba(46,200,255,.7);background:rgba(12,44,62,.62)}
+  #drag-hint.paused{color:#ffe1c2;border-color:rgba(255,160,64,.65);background:rgba(52,28,8,.62)}
 
   #grain{position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.06;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
@@ -193,8 +211,10 @@ if(location.search.includes('still')){
   document.head.appendChild(st);
 }
 const stage = document.getElementById('stage');
+let stageScale = 1;
 function fit(){
   const s = Math.min(innerWidth/1920, innerHeight/1080);
+  stageScale = s;
   stage.style.transform = `translate(-50%,-50%) scale(${s})`;
 }
 addEventListener('resize', fit); fit();
@@ -276,7 +296,14 @@ for(let i=1;i<=FRAMES;i++){
 }
 const personImg = document.getElementById('person-img');
 const preflImg = document.getElementById('prefl-img');
-let cur = 0;
+const person = document.getElementById('person');
+const dragHint = document.createElement('div');
+dragHint.id = 'drag-hint';
+dragHint.textContent = '← 拖动旋转 · 点击人物暂停 →';
+stage.appendChild(dragHint);
+let cur = 0, dragging = false, paused = false, autoRotate = true;
+let activePointerId = null, lastX = 0, dragDistance = 0, resumeTimer = null;
+let pointerStartX = 0, pointerStartY = 0, hasDragged = false;
 
 function showFrame(i){
   cur = ((i % FRAMES) + FRAMES) % FRAMES;
@@ -284,8 +311,73 @@ function showFrame(i){
     personImg.src = frames[cur].src; preflImg.src = frames[cur].src;
   }
 }
-setInterval(()=>showFrame(cur+1), FPS_MS);
+setInterval(()=>{ if(autoRotate && !dragging) showFrame(cur+1); }, FPS_MS);
 showFrame(0);
+
+/* ===== 人物交互：点击切换暂停；左右拖动时临时停止并手动旋转 ===== */
+const DRAG_PX_PER_FRAME = 8;
+const CLICK_MOVE_THRESHOLD = 6;
+function updateDragHint(){
+  dragHint.classList.toggle('paused', paused);
+  dragHint.textContent = paused
+    ? 'Ⅱ 已暂停 · 点击人物继续'
+    : '← 拖动旋转 · 点击人物暂停 →';
+}
+person.addEventListener('pointerdown', e=>{
+  if(e.pointerType === 'mouse' && e.button !== 0) return;
+  if(dragging) return;
+  e.preventDefault();
+  clearTimeout(resumeTimer);
+  autoRotate = false;
+  dragging = true;
+  activePointerId = e.pointerId;
+  lastX = e.clientX;
+  pointerStartX = e.clientX;
+  pointerStartY = e.clientY;
+  dragDistance = 0;
+  hasDragged = false;
+  person.classList.add('dragging');
+  dragHint.classList.add('active');
+  dragHint.textContent = paused ? '拖动中 · 松手保持暂停' : '拖动中 · 松手继续播放';
+  person.setPointerCapture(e.pointerId);
+});
+person.addEventListener('pointermove', e=>{
+  if(!dragging || e.pointerId !== activePointerId) return;
+  e.preventDefault();
+  const totalX = (e.clientX - pointerStartX) / stageScale;
+  const totalY = (e.clientY - pointerStartY) / stageScale;
+  if(Math.hypot(totalX, totalY) >= CLICK_MOVE_THRESHOLD) hasDragged = true;
+  dragDistance += (e.clientX - lastX) / stageScale;
+  lastX = e.clientX;
+  const steps = Math.trunc(dragDistance / DRAG_PX_PER_FRAME);
+  if(steps){
+    showFrame(cur + steps);
+    dragDistance -= steps * DRAG_PX_PER_FRAME;
+  }
+});
+function finishDrag(pointerId = activePointerId, allowClick = false){
+  if(!dragging || (activePointerId !== null && pointerId !== null && pointerId !== activePointerId)) return;
+  const wasClick = allowClick && !hasDragged;
+  dragging = false;
+  activePointerId = null;
+  dragDistance = 0;
+  person.classList.remove('dragging');
+  dragHint.classList.remove('active');
+  clearTimeout(resumeTimer);
+  if(wasClick){
+    paused = !paused;
+    autoRotate = !paused;
+  }else if(!paused){
+    resumeTimer = setTimeout(()=>{ autoRotate = true; }, 500);
+  }else{
+    autoRotate = false;
+  }
+  updateDragHint();
+}
+person.addEventListener('pointerup', e=>finishDrag(e.pointerId, true));
+person.addEventListener('pointercancel', e=>finishDrag(e.pointerId));
+person.addEventListener('lostpointercapture', e=>finishDrag(e.pointerId));
+addEventListener('blur', ()=>finishDrag());
 
 /* ===== 伪二维码（POC 占位；正式版接视频下载短链） ===== */
 (function qr(){
@@ -316,7 +408,7 @@ document.getElementById('again').onclick = ()=>{
   void document.getElementById('flash').offsetWidth;
   document.getElementById('flash').style.animation = '';
 };
-document.getElementById('done').onclick = ()=>location.href = 'index.html';
+document.getElementById('done').onclick = ()=>location.replace('../index.html');
 </script>
 </body>
 </html>
