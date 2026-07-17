@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>户外动态视频 · POC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ice:#7fd8ff; --cyan:#2ec8ff; --amber:#ffa040;
+    --ink:#dff2ff; --ink-dim:#8fb8cf;
+    --glass:rgba(8,18,32,.55); --glass-line:rgba(127,216,255,.22);
+    --font-num:"DIN Alternate","Avenir Next Condensed",sans-serif;
+    --font-cn:"PingFang SC","Hiragino Sans GB",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#000}
+  body{font-family:var(--font-cn);color:var(--ink)}
+  #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center center;background:#000}
+
+  /* ===== 户外背景（生成的视频画面） ===== */
+  .bg{position:absolute;inset:0;overflow:hidden}
+  .bg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+    transition:opacity .8s;animation:kenburns 26s ease-in-out infinite alternate}
+  .bg img.show{opacity:1}
+  @keyframes kenburns{from{transform:scale(1) translate(0,0)}to{transform:scale(1.09) translate(-16px,-10px)}}
+  /* 电影调色罩 */
+  #grade{position:absolute;inset:0;z-index:5;pointer-events:none;transition:background 1s;
+    background:linear-gradient(to bottom, rgba(6,16,26,.35), transparent 30%, transparent 62%, rgba(4,10,18,.55))}
+
+  /* ===== 人物（换装视频主体：序列帧播放） =====
+     落地三件套：脚底接触阴影 + 湿地面倒影 + 按场景匹配的人物色调（filter），
+     脚线固定在 bottom:150（画面中场景地面的可站立区域） */
+  #person{position:absolute;left:50%;bottom:150px;translate:-50% 0;z-index:10;height:560px;width:480px}
+  #person img{position:absolute;left:50%;bottom:0;translate:-50% 0;max-height:560px;max-width:460px;
+    transition:filter .8s}
+  #shadow{position:absolute;left:50%;bottom:136px;translate:-50% 0;z-index:9;width:230px;height:32px;
+    background:radial-gradient(closest-side, rgba(0,0,0,.72), transparent 72%);filter:blur(6px);
+    transition:opacity .8s}
+  /* 人物在湿地面上的倒影（与背景水面反光呼应，消除“悬空感”） */
+  #prefl{position:absolute;left:50%;bottom:0;translate:-50% 0;z-index:8;width:480px;height:150px;
+    overflow:hidden;pointer-events:none;transition:opacity .8s;
+    -webkit-mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), transparent 90%);
+    mask-image:linear-gradient(to bottom, rgba(0,0,0,.95), transparent 90%)}
+  #prefl img{position:absolute;left:50%;top:0;translate:-50% 0;max-height:560px;max-width:460px;
+    transform:scaleY(-1);filter:blur(2.5px) brightness(.7) saturate(.8)}
+
+  /* 电影黑边 */
+  .bar{position:absolute;left:0;right:0;height:88px;z-index:20;background:#000}
+  .bar.top{top:0;box-shadow:0 8px 30px rgba(0,0,0,.6)}
+  .bar.btm{bottom:0;box-shadow:0 -8px 30px rgba(0,0,0,.6)}
+
+  /* ===== 顶栏信息 ===== */
+  #head{position:absolute;left:44px;top:24px;z-index:30;display:flex;align-items:center;gap:16px}
+  #head .l1{font-family:var(--font-num);font-size:19px;letter-spacing:3px;color:#eaf7ff;text-shadow:0 0 18px rgba(46,200,255,.6)}
+  #head .l1::before{content:"◱ ";color:var(--cyan)}
+  #head .tag{padding:5px 14px;border-radius:999px;border:1px solid rgba(255,160,64,.5);
+    font-size:11px;letter-spacing:2px;color:#ffd9b0;background:rgba(20,10,4,.4)}
+  #rec{position:absolute;right:44px;top:30px;z-index:30;display:flex;align-items:center;gap:8px;
+    font-family:var(--font-num);font-size:13px;letter-spacing:2px;color:var(--ink-dim)}
+  #rec i{width:9px;height:9px;border-radius:50%;background:#ff5f45;box-shadow:0 0 10px #ff5f45;animation:blink 1.4s infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* ===== 场景切换（左侧缩略图） ===== */
+  #scenes{position:absolute;left:44px;top:50%;translate:0 -50%;z-index:30;display:flex;flex-direction:column;gap:14px}
+  .sc{position:relative;width:190px;border-radius:12px;overflow:hidden;cursor:pointer;
+    border:1px solid rgba(127,216,255,.25);transition:.25s;background:var(--glass);
+    backdrop-filter:blur(10px)}
+  .sc img{display:block;width:100%;height:96px;object-fit:cover;opacity:.85;transition:.25s}
+  .sc .nm{padding:8px 12px;font-size:12px;letter-spacing:2px;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
+  .sc .nm small{font-family:var(--font-num);font-size:9px;letter-spacing:1px;opacity:.7}
+  .sc:hover img{opacity:1}
+  .sc.on{border-color:var(--cyan);box-shadow:0 0 22px rgba(46,200,255,.45)}
+  .sc.on .nm{color:#fff}
+  .sc.on::after{content:"● 当前场景";position:absolute;top:8px;right:10px;font-size:10px;color:#fff;
+    letter-spacing:1px;padding:3px 8px;border-radius:999px;background:rgba(255,95,69,.85)}
+  .sc-t{font-size:12px;letter-spacing:3px;color:var(--ice);margin-bottom:2px;text-shadow:0 1px 8px rgba(0,0,0,.9)}
+  .sc-t small{font-family:var(--font-num);font-size:9px;color:var(--ink-dim);margin-left:4px;text-shadow:0 1px 8px rgba(0,0,0,.9)}
+
+  /* ===== 右侧：保存面板 ===== */
+  #save{position:absolute;right:44px;top:50%;translate:0 -50%;z-index:30;width:196px;
+    padding:16px;border-radius:14px;background:var(--glass);border:1px solid var(--glass-line);
+    backdrop-filter:blur(12px);text-align:center}
+  #save .t{font-size:13px;letter-spacing:2px;color:var(--ice);margin-bottom:12px}
+  #qr{margin:0 auto;width:120px;height:120px;padding:8px;background:#fff;border-radius:8px}
+  #qr canvas{display:block;width:104px;height:104px}
+  #save .d{margin-top:10px;font-size:11px;color:var(--ink-dim);letter-spacing:1px;line-height:1.7}
+  #save .hint{margin-top:10px;padding-top:10px;border-top:1px dashed rgba(127,216,255,.2);
+    font-family:var(--font-num);font-size:10px;color:var(--ink-dim);letter-spacing:1px}
+
+  /* ===== 底部：视频信息操作栏（生成的场景实时呈现，无播放器语义） ===== */
+  #vbar{position:absolute;left:50%;bottom:22px;translate:-50% 0;z-index:30;
+    display:flex;align-items:center;gap:20px;padding:14px 26px;border-radius:14px;
+    background:var(--glass);border:1px solid var(--glass-line);
+    backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  #vlive{display:flex;align-items:center;gap:8px;font-family:var(--font-num);font-size:11px;
+    letter-spacing:2px;color:var(--ice);white-space:nowrap}
+  #vlive i{width:8px;height:8px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 10px var(--cyan);animation:blink 1.8s infinite}
+  #title{text-align:center;font-size:14px;letter-spacing:3px;color:var(--ink);padding:0 6px}
+  #title small{display:block;font-family:var(--font-num);font-size:10px;letter-spacing:2px;color:var(--ink-dim);margin-top:3px}
+  #again{padding:0 20px;height:44px;border-radius:10px;border:1px solid rgba(127,216,255,.3);
+    background:rgba(46,200,255,.06);color:var(--ice);font-size:13px;letter-spacing:2px;cursor:pointer;transition:.2s}
+  #again:hover{background:rgba(46,200,255,.2);color:#fff}
+  #done{padding:0 26px;height:44px;border-radius:10px;border:1px solid rgba(255,160,64,.55);
+    background:linear-gradient(135deg, rgba(255,160,64,.28), rgba(255,120,40,.16));
+    color:#ffe1c2;font-size:14px;letter-spacing:2px;cursor:pointer;transition:.25s;
+    box-shadow:0 0 22px rgba(255,160,64,.25)}
+  #done:hover{box-shadow:0 0 34px rgba(255,160,64,.55);color:#fff}
+
+  #back{position:absolute;left:44px;bottom:26px;z-index:31;padding:11px 20px;border-radius:11px;
+    border:1px solid rgba(127,216,255,.3);background:var(--glass);backdrop-filter:blur(12px);
+    color:var(--ink-dim);font-size:13px;letter-spacing:2px;cursor:pointer;transition:.2s}
+  #back:hover{color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35)}
+  #steps{position:absolute;right:44px;bottom:34px;z-index:31;display:flex;gap:8px;align-items:center;
+    font-family:var(--font-num);font-size:11px;letter-spacing:1px;color:var(--ink-dim)}
+  #steps .s{display:flex;align-items:center;gap:5px}
+  #steps .n{width:20px;height:20px;border-radius:50%;border:1px solid rgba(127,216,255,.3);
+    display:flex;align-items:center;justify-content:center;font-size:10px}
+  #steps .s.on .n{background:rgba(46,200,255,.25);border-color:var(--cyan);color:#fff;box-shadow:0 0 10px rgba(46,200,255,.5)}
+  #steps .s.on{color:var(--ice)}
+  #steps .ln{width:22px;height:1px;background:rgba(127,216,255,.25)}
+
+  #wm{position:absolute;right:250px;bottom:120px;z-index:21;font-family:var(--font-num);
+    font-size:11px;letter-spacing:2px;color:rgba(255,255,255,.55);text-shadow:0 1px 4px rgba(0,0,0,.6)}
+
+  #grain{position:absolute;inset:0;z-index:40;pointer-events:none;opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
+  #vignette{position:absolute;inset:0;z-index:22;pointer-events:none;
+    background:radial-gradient(1500px 950px at 50% 46%, transparent 62%, rgba(0,0,0,.5))}
+
+  .reveal{opacity:0;transform:translateY(26px);animation:reveal .8s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes reveal{to{opacity:1;transform:none}}
+
+  /* 生成完成的入场闪光 */
+  #flash{position:absolute;inset:0;z-index:60;background:#dff6ff;opacity:0;pointer-events:none;animation:flash 1.2s ease-out}
+  @keyframes flash{0%{opacity:.9}100%{opacity:0}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="bg" id="bg"></div>
+  <div id="grade"></div>
+
+  <div id="prefl"><img id="prefl-img" alt=""></div>
+  <div id="shadow"></div>
+  <div id="person"><img id="person-img" alt=""></div>
+
+  <div class="bar top"></div>
+  <div class="bar btm"></div>
+
+  <div id="head" class="reveal" style="animation-delay:.2s">
+    <div class="l1">AI FITTING ROOM 2.0</div>
+    <div class="tag">SCENE 03 · 户外动态视频展示</div>
+  </div>
+  <div id="rec" class="reveal" style="animation-delay:.3s"><i></i>AI GENERATED · 1080P</div>
+
+  <div id="scenes" class="reveal" style="animation-delay:.4s">
+    <div><div class="sc-t">户外场景<small>OUTDOOR SCENE</small></div></div>
+    <!-- 缩略图由 SCENES 数据动态生成 -->
+  </div>
+
+  <div id="save" class="reveal" style="animation-delay:.5s">
+    <div class="t">扫码带走视频</div>
+    <div id="qr"><canvas id="qr-cv" width="104" height="104"></canvas></div>
+    <div class="d">手机扫码即可保存<br>您的专属换装视频</div>
+    <div class="hint">VIDEO ID · WX-20260715</div>
+  </div>
+
+  <div id="wm">✦ AI 换装 · Wan 2.2 生成</div>
+
+  <div id="vbar" class="reveal" style="animation-delay:.6s">
+    <div id="vlive"><i></i>LIVE SCENE</div>
+    <div id="title">您的专属换装视频<small id="sub">云感 POLO · 古城广场 · 360° 环绕</small></div>
+    <button id="again">↻ 换场景重新生成</button>
+    <button id="done">✦ 完成体验</button>
+  </div>
+
+  <button id="back">‹ 返回照片效果</button>
+  <div id="steps">
+    <div class="s"><div class="n">1</div>选衣</div><div class="ln"></div>
+    <div class="s"><div class="n">2</div>照片效果</div><div class="ln"></div>
+    <div class="s on"><div class="n">3</div>动态视频</div>
+  </div>
+
+  <div id="vignette"></div><div id="grain"></div>
+  <div id="flash"></div>
+</div>
+
+<script>
+if(location.search.includes('still')){
+  const st = document.createElement('style');
+  st.textContent = '.reveal{animation:none !important;opacity:1 !important;transform:none !important}#flash{display:none}';
+  document.head.appendChild(st);
+}
+const stage = document.getElementById('stage');
+function fit(){
+  const s = Math.min(innerWidth/1920, innerHeight/1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ===== 场景数据 =====
+   选图标准（与人物视频的协调感）：
+   ① 平视视角、竖线不倾斜（人物是正面站立，广角仰拍会产生"贴片感"）
+   ② 画面中央地面留空，人物脚线（bottom:150）落在可站立区域
+   ③ 光线偏暖，与人物棚拍暖光一致；夜景靠 filter 压暗融合
+   ④ 高端场所调性：酒店庭园 / 高尔夫 / 石拱庭院 / 海景露台
+   pos = 背景 object-position（竖图用它选取取景带） */
+const SCENES = [
+  {img:'assets/outdoor/garden.jpg', name:'庭园夜径', en:'GARDEN', pos:'50% 62%',
+   grade:'linear-gradient(to bottom, rgba(6,10,6,.45), transparent 32%, transparent 60%, rgba(4,8,4,.6))',
+   /* 暖光庭园夜景：人物压暗、轻微偏暖融入步道灯光 */
+   person:'brightness(.86) contrast(1.06) saturate(.9) sepia(.12) drop-shadow(0 6px 14px rgba(0,0,0,.6))',
+   refl:.28, shadow:.95},
+  {img:'assets/outdoor/golf.jpg', name:'高尔夫黄昏', en:'FAIRWAY', pos:'50% 74%',
+   grade:'linear-gradient(to bottom, rgba(30,20,4,.42), transparent 30%, transparent 62%, rgba(20,14,4,.5))',
+   /* 黄金时刻逆光：人物保持明亮、整体偏暖 */
+   person:'brightness(.97) contrast(1.03) saturate(1.02) sepia(.1) drop-shadow(0 8px 16px rgba(30,20,0,.5))',
+   refl:.12, shadow:.8},
+  {img:'assets/outdoor/courtyard.jpg', name:'石拱庭院', en:'COURTYARD', pos:'50% 55%',
+   grade:'linear-gradient(to bottom, rgba(16,8,2,.45), transparent 30%, transparent 60%, rgba(12,6,2,.6))',
+   /* 琥珀色石庭夜景：人物压暗、明显偏暖 */
+   person:'brightness(.84) contrast(1.05) saturate(.85) sepia(.2) drop-shadow(0 6px 14px rgba(0,0,0,.6))',
+   refl:.24, shadow:.95},
+  {img:'assets/outdoor/manor.jpg', name:'庄园门前', en:'MANOR', pos:'50% 50%',
+   grade:'linear-gradient(to bottom, rgba(8,10,20,.45), transparent 30%, transparent 60%, rgba(6,8,16,.6))',
+   /* 乡村庄园夜景：冷月光 + 暖窗光，人物压暗微暖 */
+   person:'brightness(.86) contrast(1.05) saturate(.9) sepia(.12) drop-shadow(0 6px 14px rgba(0,0,0,.6))',
+   refl:.22, shadow:.95},
+  {img:'assets/outdoor/veranda.jpg', name:'暮色门廊', en:'VERANDA', pos:'50% 50%',
+   grade:'linear-gradient(to bottom, rgba(8,8,24,.42), transparent 30%, transparent 60%, rgba(6,5,16,.6))',
+   /* 暖烛光门廊：轻微 sepia 偏暖 */
+   person:'brightness(.87) contrast(1.05) saturate(.92) sepia(.15) drop-shadow(0 6px 14px rgba(0,0,0,.55))',
+   refl:.26, shadow:.95},
+];
+const bgBox = document.getElementById('bg');
+const scBox = document.getElementById('scenes');
+SCENES.forEach((s,i)=>{
+  const im = new Image(); im.src = s.img; im.style.objectPosition = s.pos;
+  bgBox.appendChild(im); s.el = im;
+  const card = document.createElement('div');
+  card.className = 'sc'; card.dataset.i = i;
+  card.innerHTML = `<img src="${s.img}" alt="" style="object-position:${s.pos}"><div class="nm">${s.name}<small>${s.en}</small></div>`;
+  scBox.appendChild(card);
+});
+
+/* ===== 漏斗末端：场景②选定的那一款（?g=全局索引），fav 用于返回时还原试穿间 ===== */
+const GNAMES = ['云感 Polo · 燕麦白','云感 Polo · 雾霾蓝','云感 Polo · 藏青',
+                '云感 Polo · 浅卡其','云感 Polo · 墨绿','云感 Polo · 燕麦灰'];
+const qs = new URLSearchParams(location.search);
+const gIdx = Math.min(Math.max(parseInt(qs.get('g')||'2',10)||0, 0), GNAMES.length-1);
+const favParam = qs.get('fav') || '';
+let curScene = 0;
+function setScene(i){
+  curScene = i;
+  SCENES.forEach((s,j)=>s.el.classList.toggle('show', j===i));
+  document.getElementById('grade').style.background = SCENES[i].grade;
+  document.getElementById('person-img').style.filter = SCENES[i].person;
+  document.getElementById('prefl').style.opacity = SCENES[i].refl;
+  document.getElementById('shadow').style.opacity = SCENES[i].shadow;
+  document.querySelectorAll('.sc').forEach(el=>el.classList.toggle('on', +el.dataset.i===i));
+  document.getElementById('sub').textContent = `${GNAMES[gIdx]} · ${SCENES[i].name} · 360° 环绕`;
+}
+document.querySelectorAll('.sc').forEach(el=>el.onclick = ()=>setScene(+el.dataset.i));
+/* ?scene=0|1 指定默认场景（演示/截图用） */
+setScene(Math.min(parseInt(qs.get('scene')||'0',10)||0, SCENES.length-1));
+
+/* ===== 生成视频循环呈现：序列帧（POC 用 360° 帧模拟；正式版为 Wan 2.2 生成的 mp4 loop 播放）
+   作为“活的场景”持续环绕展示，不提供播放器操作 ===== */
+const FRAMES = 60, FPS_MS = 90;
+const frames = [];
+for(let i=1;i<=FRAMES;i++){
+  const im = new Image();
+  im.src = `assets/seq/${String(i).padStart(3,'0')}.webp`;
+  frames.push(im);
+}
+const personImg = document.getElementById('person-img');
+const preflImg = document.getElementById('prefl-img');
+let cur = 0;
+
+function showFrame(i){
+  cur = ((i % FRAMES) + FRAMES) % FRAMES;
+  if(frames[cur].complete && frames[cur].naturalWidth){
+    personImg.src = frames[cur].src; preflImg.src = frames[cur].src;
+  }
+}
+setInterval(()=>showFrame(cur+1), FPS_MS);
+showFrame(0);
+
+/* ===== 伪二维码（POC 占位；正式版接视频下载短链） ===== */
+(function qr(){
+  const c = document.getElementById('qr-cv').getContext('2d');
+  const N = 21, cell = 104/N;
+  c.fillStyle = '#fff'; c.fillRect(0,0,104,104);
+  c.fillStyle = '#0a1420';
+  let seed = 20260715;
+  const rnd = ()=>{ seed = (seed*9301 + 49297) % 233280; return seed/233280; };
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const inEye = (x<7&&y<7)||(x>N-8&&y<7)||(x<7&&y>N-8);
+    if(!inEye && rnd()>.52) c.fillRect(x*cell, y*cell, cell*.92, cell*.92);
+  }
+  function eye(px,py){
+    c.fillRect(px,py,cell*7,cell*7);
+    c.fillStyle='#fff'; c.fillRect(px+cell,py+cell,cell*5,cell*5);
+    c.fillStyle='#0a1420'; c.fillRect(px+cell*2,py+cell*2,cell*3,cell*3);
+  }
+  eye(0,0); eye(104-cell*7,0); eye(0,104-cell*7);
+})();
+
+/* 导航（fav / g 回传，返回时试穿间与当前款不丢失） */
+document.getElementById('back').onclick = ()=>
+  location.href = `scene2.html?still&g=${gIdx}${favParam ? '&fav='+favParam : ''}`;
+document.getElementById('again').onclick = ()=>{
+  setScene((curScene+1)%SCENES.length); showFrame(0);
+  document.getElementById('flash').style.animation = 'none';
+  void document.getElementById('flash').offsetWidth;
+  document.getElementById('flash').style.animation = '';
+};
+document.getElementById('done').onclick = ()=>location.href = 'index.html';
+</script>
+</body>
+</html>

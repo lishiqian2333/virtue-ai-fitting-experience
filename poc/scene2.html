@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>换装效果 · POC</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ice:#7fd8ff; --ice-dim:#4aa8d8; --cyan:#2ec8ff;
+    --amber:#ffa040; --amber-dim:#c97a2e;
+    --ink:#dff2ff; --ink-dim:#8fb8cf;
+    --glass:rgba(10,24,44,.42); --glass-line:rgba(127,216,255,.22);
+    --font-num:"DIN Alternate","Avenir Next Condensed",sans-serif;
+    --font-cn:"PingFang SC","Hiragino Sans GB",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-user-select:none;user-select:none}
+  html,body{width:100%;height:100%;overflow:hidden;background:#02060d}
+  body{font-family:var(--font-cn);color:var(--ink)}
+
+  #stage{position:absolute;left:50%;top:50%;width:1920px;height:1080px;
+    transform-origin:center center;
+    background:
+      radial-gradient(1200px 700px at 50% 30%, rgba(28,70,120,.30), transparent 65%),
+      radial-gradient(900px 500px at 50% 108%, rgba(46,160,255,.10), transparent 60%),
+      radial-gradient(1600px 1000px at 50% 50%, #071120 0%, #030812 55%, #01040a 100%);
+  }
+  .dome{position:absolute;left:50%;top:-340px;width:1400px;height:700px;transform:translateX(-50%);
+    border-radius:50%;border:2px solid rgba(46,200,255,.28);
+    box-shadow:0 0 40px rgba(46,200,255,.2), inset 0 0 60px rgba(46,200,255,.1);filter:blur(.5px)}
+  .dome.d2{top:-390px;width:1700px;height:800px;border-color:rgba(127,216,255,.1);box-shadow:none}
+  .floor{position:absolute;left:0;right:0;bottom:0;height:340px;
+    background:linear-gradient(to bottom, transparent, rgba(20,50,90,.18) 45%, rgba(30,70,110,.28))}
+  .floor::before{content:"";position:absolute;inset:0;
+    background-image:
+      repeating-linear-gradient(rgba(90,180,255,.06) 0 1px, transparent 1px 44px),
+      repeating-linear-gradient(90deg, rgba(90,180,255,.06) 0 1px, transparent 1px 44px);
+    transform:perspective(600px) rotateX(58deg);transform-origin:top;opacity:.6}
+
+  /* ===== 左上 LOGO ===== */
+  #logo{position:absolute;left:44px;top:34px;z-index:30}
+  #logo .l1{display:flex;align-items:center;gap:10px;font-family:var(--font-num);
+    font-size:22px;letter-spacing:3px;color:#eaf7ff;text-shadow:0 0 18px rgba(46,200,255,.6)}
+  #logo .l1::before{content:"◱";color:var(--cyan);font-size:20px}
+  #logo .l2{margin-top:4px;font-size:12px;letter-spacing:4px;color:var(--ink-dim)}
+
+  /* ===== 玻璃面板通用 ===== */
+  .panel{position:absolute;z-index:25;background:var(--glass);border:1px solid var(--glass-line);
+    border-radius:14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    padding:16px 18px;box-shadow:0 8px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(127,216,255,.12)}
+  .panel::before,.panel::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--ice);border-style:solid;opacity:.7}
+  .panel::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-radius:14px 0 0 0}
+  .panel::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-radius:0 0 14px 0}
+  .p-title{display:flex;align-items:baseline;gap:8px;font-size:13px;letter-spacing:2px;color:var(--ice);margin-bottom:12px}
+  .p-title::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--cyan);
+    box-shadow:0 0 8px var(--cyan);animation:blink 2.4s infinite;align-self:center}
+  .p-title small{font-family:var(--font-num);font-size:10px;letter-spacing:1px;color:var(--ink-dim);font-weight:400}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+  /* ===== 侧栏列容器：面板纵向均匀分布，杜绝重叠 ===== */
+  .side-col{position:absolute;top:118px;bottom:150px;z-index:25;
+    display:flex;flex-direction:column;justify-content:space-between}
+  #col-l{left:44px;width:262px}
+  #col-r{right:44px;width:272px}
+  .side-col .panel{position:relative}
+
+  /* ===== 左列 ===== */
+  .look-body{display:flex;gap:14px}
+  .look-thumb{width:86px;height:118px;border-radius:10px;border:1px solid rgba(127,216,255,.3);
+    background:rgba(46,200,255,.05);display:flex;align-items:center;justify-content:center;flex:none}
+  .look-thumb img{max-width:72px;max-height:104px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5))}
+  #look-name{font-size:16px;font-weight:600;color:#fff;letter-spacing:1px;line-height:1.4}
+  #look-price{font-family:var(--font-num);font-size:24px;color:#fff;margin-top:6px;text-shadow:0 0 16px rgba(46,200,255,.5)}
+  #look-price small{font-size:14px;color:var(--ice)}
+  .look-meta{margin-top:8px;font-size:11px;color:var(--ink-dim);line-height:1.8;letter-spacing:1px}
+  .look-meta b{color:var(--ink);font-weight:500}
+  .look-sw{display:flex;gap:6px;margin-top:8px}
+  .look-sw i{width:16px;height:16px;border-radius:4px;border:1px solid rgba(127,216,255,.35)}
+
+  #match-num{font-family:var(--font-num);font-size:44px;color:#fff;text-shadow:0 0 24px rgba(46,200,255,.65);line-height:1}
+  #match-num small{font-size:22px}
+  .match-bar{margin:10px 0 14px;height:5px;border-radius:99px;background:rgba(127,216,255,.12);overflow:hidden}
+  .match-bar i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg, var(--cyan), var(--ice));box-shadow:0 0 10px var(--cyan);
+    transition:width 1s cubic-bezier(.2,.8,.2,1)}
+  .m-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+  .m-row{display:flex;justify-content:space-between;align-items:baseline;font-size:10.5px;color:var(--ink-dim);letter-spacing:0;white-space:nowrap;gap:4px}
+  .m-row b{font-family:var(--font-num);font-size:14px;color:var(--ink);font-weight:500}
+
+  .score-body{display:flex;align-items:center;gap:18px}
+  .gauge{position:relative;width:104px;height:104px;flex:none}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .bg{fill:none;stroke:rgba(127,216,255,.12);stroke-width:8}
+  .gauge .fg{fill:none;stroke:url(#ggrad);stroke-width:8;stroke-linecap:round;
+    stroke-dasharray:289;stroke-dashoffset:289;transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1);
+    filter:drop-shadow(0 0 6px rgba(46,200,255,.6))}
+  .gauge .gv{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #score-num{font-family:var(--font-num);font-size:30px;color:#fff;text-shadow:0 0 16px rgba(46,200,255,.6);line-height:1}
+  .gauge .gv small{font-size:10px;color:var(--ink-dim);letter-spacing:1px;margin-top:2px}
+  .s-bars{flex:1;display:flex;flex-direction:column;gap:9px}
+  .s-row{font-size:11px;color:var(--ink-dim);letter-spacing:1px}
+  .s-row .sb{margin-top:4px;height:4px;border-radius:99px;background:rgba(127,216,255,.12);overflow:hidden}
+  .s-row .sb i{display:block;height:100%;width:0;border-radius:99px;
+    background:linear-gradient(90deg, var(--cyan), var(--ice));transition:width .9s cubic-bezier(.2,.8,.2,1)}
+
+  /* ===== 右列 ===== */
+  .st-body{display:flex;gap:12px}
+  .st-avatar{width:44px;height:44px;border-radius:50%;flex:none;
+    background:radial-gradient(circle at 35% 30%, #9fe0ff, #1c6ea0);
+    box-shadow:0 0 14px rgba(46,200,255,.6);display:flex;align-items:center;justify-content:center;
+    font-size:20px;color:#04121f}
+  #stylist-note{font-size:12.5px;line-height:1.9;color:var(--ink-dim);min-height:88px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  .chip{padding:8px 16px;font-size:13px;letter-spacing:2px;color:var(--ice);
+    border:1px solid rgba(127,216,255,.35);border-radius:8px;background:rgba(46,200,255,.06);
+    cursor:pointer;transition:.25s;text-align:center}
+  .chip small{display:block;font-family:var(--font-num);font-size:9px;letter-spacing:1px;color:var(--ink-dim);margin-top:2px}
+  .chip.on,.chip:hover{background:rgba(46,200,255,.18);color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35)}
+  .accs{display:flex;gap:10px}
+  .acc{flex:1;height:74px;border-radius:10px;border:1px solid rgba(127,216,255,.25);
+    background:rgba(46,200,255,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;cursor:pointer;transition:.2s;font-size:11px;color:var(--ink-dim);letter-spacing:1px}
+  .acc svg{width:26px;height:26px;stroke:var(--ice);fill:none;stroke-width:1.5}
+  .acc:hover{background:rgba(46,200,255,.15);color:var(--ink);box-shadow:0 0 14px rgba(46,200,255,.3)}
+
+  .radar-wrap{display:flex;align-items:center;gap:6px}
+  #radar{flex:none}
+  .radar-cta{flex:1;align-self:flex-end;padding:10px 0;text-align:center;border-radius:9px;
+    border:1px solid rgba(255,160,64,.5);background:linear-gradient(135deg, rgba(255,160,64,.22), rgba(255,120,40,.12));
+    color:#ffd9b0;font-size:12px;letter-spacing:2px;cursor:pointer;transition:.25s}
+  .radar-cta:hover{box-shadow:0 0 22px rgba(255,160,64,.5);color:#fff}
+
+  /* ===== 顶部：已选候选款 ===== */
+  #cands{position:absolute;left:50%;top:34px;translate:-50% 0;z-index:30;width:600px}
+  .cand-bar{padding:12px 18px 14px;background:var(--glass);border:1px solid var(--glass-line);
+    border-radius:14px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    box-shadow:0 0 30px rgba(46,200,255,.08), inset 0 1px 0 rgba(127,216,255,.15)}
+  .cand-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+  .cand-head .t{font-size:13px;letter-spacing:3px;color:var(--ice)}
+  .cand-head .t small{font-family:var(--font-num);font-size:10px;color:var(--ink-dim);letter-spacing:1px;margin-left:6px}
+  #cand-count{font-family:var(--font-num);font-size:15px;color:var(--amber);letter-spacing:1px}
+  .cand-list{display:flex;gap:10px;justify-content:center}
+  .cand{position:relative;width:82px;height:104px;border-radius:10px;border:1px solid rgba(127,216,255,.22);
+    background:rgba(46,200,255,.04);display:flex;align-items:center;justify-content:center;
+    cursor:pointer;transition:.25s}
+  .cand img{max-width:66px;max-height:88px;filter:drop-shadow(0 4px 8px rgba(0,0,0,.5));transition:.25s}
+  .cand:hover{background:rgba(46,200,255,.12)}
+  .cand.on{border-color:var(--cyan);background:rgba(46,200,255,.14);box-shadow:0 0 18px rgba(46,200,255,.45)}
+  .cand.on::after{content:"◈";position:absolute;top:3px;right:6px;font-size:11px;color:var(--amber);
+    text-shadow:0 0 10px rgba(255,160,64,.8)}
+
+  /* ===== 中央全息圆柱 + 照片 ===== */
+  #cyl{position:absolute;left:50%;top:150px;width:640px;height:800px;translate:-50% 0;z-index:15}
+  .tube{position:absolute;left:50%;top:30px;bottom:56px;width:520px;transform:translateX(-50%);
+    background:linear-gradient(90deg, transparent, rgba(46,200,255,.05) 15%, rgba(46,200,255,.10) 50%, rgba(46,200,255,.05) 85%, transparent);
+    border-left:1px solid rgba(127,216,255,.16);border-right:1px solid rgba(127,216,255,.16);
+    box-shadow:inset 0 0 70px rgba(46,200,255,.06)}
+  .tube::before{content:"";position:absolute;left:50%;top:-16px;width:520px;height:60px;transform:translateX(-50%);
+    border-radius:50%;border:1px solid rgba(127,216,255,.4);
+    background:radial-gradient(closest-side, rgba(46,200,255,.12), transparent)}
+  .tube i{position:absolute;left:50%;top:-8px;width:400px;height:40px;transform:translateX(-50%);
+    border-radius:50%;border:1px dashed rgba(127,216,255,.3);animation:ringspin 18s linear infinite}
+  .tube::after{content:"";position:absolute;inset:0;
+    background:repeating-linear-gradient(rgba(127,216,255,.04) 0 2px, transparent 2px 6px);
+    animation:scanmove 9s linear infinite}
+  @keyframes scanmove{from{background-position:0 0}to{background-position:0 -240px}}
+  @keyframes ringspin{from{transform:translateX(-50%) rotate(0)}to{transform:translateX(-50%) rotate(360deg)}}
+  .scanline{position:absolute;left:50%;width:530px;height:56px;transform:translateX(-50%);
+    background:linear-gradient(to bottom, transparent, rgba(120,220,255,.13), transparent);
+    border-top:1px solid rgba(150,230,255,.22);
+    animation:sweep 6s ease-in-out infinite;pointer-events:none;z-index:3}
+  @keyframes sweep{0%{top:60px;opacity:0}12%{opacity:1}50%{top:640px;opacity:1}62%{opacity:0}100%{top:60px;opacity:0}}
+  .base{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);width:640px;height:200px;pointer-events:none}
+  .ring{position:absolute;left:50%;top:50%;border-radius:50%}
+  .r1{width:600px;height:190px;margin:-95px 0 0 -300px;border:2px solid rgba(46,200,255,.5);
+    box-shadow:0 0 30px rgba(46,200,255,.3), inset 0 0 40px rgba(46,200,255,.1)}
+  .r2{width:490px;height:152px;margin:-76px 0 0 -245px;border:1px solid rgba(127,216,255,.35)}
+  .r3{width:370px;height:114px;margin:-57px 0 0 -185px;border:1px dashed rgba(127,216,255,.45);animation:rspin 14s linear infinite}
+  @keyframes rspin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .r4{width:280px;height:86px;margin:-43px 0 0 -140px;
+    background:radial-gradient(closest-side, rgba(46,200,255,.26), rgba(46,200,255,.05) 70%, transparent);
+    box-shadow:0 0 50px rgba(46,200,255,.35)}
+
+  /* 照片主体：2D 固定角度，不做 3D。4 张角度图绝对定位叠加在同一位置，交叉淡入 */
+  #photo{position:absolute;left:50%;bottom:100px;translate:-50% 0;height:620px;width:480px;z-index:2}
+  #photo img{position:absolute;left:50%;bottom:0;translate:-50% 0;max-height:620px;max-width:460px;opacity:0;transition:opacity .28s;
+    filter:drop-shadow(0 0 12px rgba(46,200,255,.30)) drop-shadow(0 0 50px rgba(46,200,255,.15))}
+  #photo img.show{opacity:1}
+  #photo.flicker img.show{animation:holoflick .18s steps(2) 2}
+  @keyframes holoflick{50%{opacity:.7;filter:drop-shadow(0 0 26px rgba(46,200,255,.8)) brightness(1.5)}}
+  #reflection{position:absolute;left:50%;bottom:-30px;transform:translateX(-50%) scaleY(-1);height:120px;width:480px;
+    overflow:hidden;opacity:.14;pointer-events:none;z-index:1;
+    -webkit-mask-image:linear-gradient(to top, transparent 30%, #000);mask-image:linear-gradient(to top, transparent 30%, #000)}
+  #reflection img{position:absolute;left:50%;transform:translateX(-50%);bottom:-500px;max-height:620px;max-width:460px;
+    filter:blur(2px) brightness(1.4);opacity:0;transition:opacity .28s}
+  #reflection img.show{opacity:1}
+  #particles{position:absolute;inset:0;pointer-events:none;z-index:2}
+
+  /* 光柱两侧：上一款 / 下一款 半透明预览（呼应概念稿光柱内悬浮衣服） */
+  .ghost{position:absolute;top:270px;z-index:1;opacity:0;transition:opacity .5s;pointer-events:none;
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    animation:ghostfloat 5.5s ease-in-out infinite}
+  .ghost img{width:112px;opacity:.5;
+    filter:drop-shadow(0 0 16px rgba(46,200,255,.4)) brightness(1.12) saturate(.6)}
+  .ghost span{font-size:10px;letter-spacing:2px;color:var(--ink-dim);opacity:.85}
+  .ghost.show{opacity:1}
+  #ghost-l{left:-52px} #ghost-r{right:-52px;animation-delay:2.7s}
+  @keyframes ghostfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+  /* ===== 底部：一键切换 + 视角切换 ===== */
+  #dock{position:absolute;left:50%;bottom:32px;translate:-50% 0;z-index:30;
+    display:flex;align-items:stretch;gap:16px}
+  .dock-box{padding:12px 20px;background:var(--glass);border:1px solid var(--glass-line);border-radius:14px;
+    backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  .dock-t{font-size:11px;letter-spacing:2px;color:var(--ice);margin-bottom:8px;text-align:center}
+  .dock-t small{font-family:var(--font-num);font-size:9px;color:var(--ink-dim);margin-left:4px}
+  .sw-row{display:flex;align-items:center;gap:12px;justify-content:center}
+  .arrow{width:44px;height:44px;border-radius:10px;border:1px solid rgba(127,216,255,.3);
+    background:rgba(46,200,255,.06);color:var(--ice);font-size:18px;cursor:pointer;transition:.2s;
+    display:flex;align-items:center;justify-content:center}
+  .arrow:hover{background:rgba(46,200,255,.2);box-shadow:0 0 16px rgba(46,200,255,.4);color:#fff}
+  .hand{width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    color:var(--cyan);filter:drop-shadow(0 0 10px rgba(46,200,255,.8));animation:handtap 2.2s ease-in-out infinite}
+  .hand svg{width:24px;height:24px}
+  @keyframes handtap{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  .views{display:flex;gap:8px}
+  .view{min-width:66px;padding:7px 10px;border-radius:9px;border:1px solid rgba(127,216,255,.28);
+    background:rgba(46,200,255,.05);cursor:pointer;transition:.2s;text-align:center}
+  .view .ic{height:18px;display:flex;align-items:center;justify-content:center;color:var(--ink-dim);transition:.2s}
+  .view .ic svg{width:18px;height:18px}
+  .view.on .ic{color:#fff;filter:drop-shadow(0 0 6px rgba(46,200,255,.8))}
+  .view .tx{font-size:11px;letter-spacing:2px;color:var(--ink-dim);margin-top:3px}
+  .view:hover{background:rgba(46,200,255,.16)}
+  .view.on{border-color:var(--cyan);background:rgba(46,200,255,.2);box-shadow:0 0 16px rgba(46,200,255,.5)}
+  .view.on .tx{color:#fff}
+  .view.dis{opacity:.45;cursor:not-allowed}
+  #cta{align-self:center;padding:0 30px;height:56px;border-radius:12px;border:1px solid rgba(255,160,64,.55);
+    background:linear-gradient(135deg, rgba(255,160,64,.28), rgba(255,120,40,.16));
+    color:#ffe1c2;font-size:15px;letter-spacing:2px;cursor:pointer;transition:.25s;font-family:var(--font-cn);
+    box-shadow:0 0 22px rgba(255,160,64,.25)}
+  #cta:hover{box-shadow:0 0 34px rgba(255,160,64,.55);color:#fff;transform:translateY(-2px)}
+  #back{position:absolute;left:44px;bottom:32px;z-index:30;padding:12px 22px;border-radius:12px;
+    border:1px solid rgba(127,216,255,.3);background:var(--glass);backdrop-filter:blur(14px);
+    color:var(--ink-dim);font-size:13px;letter-spacing:2px;cursor:pointer;transition:.2s}
+  #back:hover{color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35)}
+
+  /* 步骤指示 */
+  #steps{position:absolute;right:44px;bottom:40px;z-index:30;display:flex;gap:8px;align-items:center;
+    font-family:var(--font-num);font-size:11px;letter-spacing:1px;color:var(--ink-dim)}
+  #steps .s{display:flex;align-items:center;gap:5px}
+  #steps .n{width:20px;height:20px;border-radius:50%;border:1px solid rgba(127,216,255,.3);
+    display:flex;align-items:center;justify-content:center;font-size:10px}
+  #steps .s.on .n{background:rgba(46,200,255,.25);border-color:var(--cyan);color:#fff;box-shadow:0 0 10px rgba(46,200,255,.5)}
+  #steps .s.on{color:var(--ice)}
+  #steps .ln{width:22px;height:1px;background:rgba(127,216,255,.25)}
+
+  #toast{position:absolute;left:50%;bottom:150px;transform:translateX(-50%) translateY(20px);z-index:60;
+    padding:14px 34px;border-radius:12px;background:rgba(8,26,40,.85);border:1px solid rgba(255,160,64,.5);
+    color:#ffd9b0;font-size:15px;letter-spacing:2px;opacity:0;transition:.4s;pointer-events:none;
+    box-shadow:0 0 30px rgba(255,160,64,.3);backdrop-filter:blur(10px)}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #grain{position:absolute;inset:0;z-index:50;pointer-events:none;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
+  #vignette{position:absolute;inset:0;z-index:49;pointer-events:none;
+    background:radial-gradient(1400px 900px at 50% 46%, transparent 60%, rgba(0,0,0,.55))}
+
+  .reveal{opacity:0;transform:translateY(26px);animation:reveal .8s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes reveal{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="dome"></div><div class="dome d2"></div>
+  <div class="floor"></div>
+
+  <div id="logo" class="reveal" style="animation-delay:.1s">
+    <div class="l1">AI FITTING ROOM 2.0</div>
+    <div class="l2">未来智能 AI 虚拟试衣系统 · 换装效果</div>
+  </div>
+
+  <!-- 顶部：已选候选款 -->
+  <div id="cands" class="reveal" style="animation-delay:.2s">
+    <div class="cand-bar">
+      <div class="cand-head">
+        <span class="t">试穿间 · 已收藏款<small>YOUR FITTING LIST</small></span>
+        <span id="cand-count">1 / 6</span>
+      </div>
+      <div class="cand-list" id="cand-list"></div>
+    </div>
+  </div>
+
+  <!-- 左列 -->
+  <div class="side-col" id="col-l">
+  <div class="panel reveal" id="p-look" style="animation-delay:.3s">
+    <div class="p-title">当前试穿款 <small>CURRENT LOOK</small></div>
+    <div class="look-body">
+      <div class="look-thumb"><img id="look-img" alt=""></div>
+      <div>
+        <div id="look-name">—</div>
+        <div id="look-price"><small>¥</small><span>0</span></div>
+        <div class="look-meta">面料 <b>凉感珠地棉</b><br>成分 <b>棉 92% · 氨纶 8%</b></div>
+        <div class="look-sw" id="look-sw"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel reveal" id="p-match" style="animation-delay:.4s">
+    <div class="p-title">AI 尺寸匹配分析 <small>SIZE MATCH</small></div>
+    <div id="match-num">0<small>%</small></div>
+    <div class="match-bar"><i id="match-fill"></i></div>
+    <div class="m-grid">
+      <div class="m-row"><span>肩宽 Shoulder</span><b>94%</b></div>
+      <div class="m-row"><span>衣长 Length</span><b>93%</b></div>
+      <div class="m-row"><span>袖长 Sleeve</span><b>93%</b></div>
+      <div class="m-row"><span>胸围 Bust</span><b>92%</b></div>
+      <div class="m-row"><span>腰围 Waist</span><b>91%</b></div>
+      <div class="m-row"><span>臀围 Hip</span><b>90%</b></div>
+    </div>
+  </div>
+
+  <div class="panel reveal" id="p-score" style="animation-delay:.5s">
+    <div class="p-title">身材适配评分 <small>BODY FIT SCORE</small></div>
+    <div class="score-body">
+      <div class="gauge">
+        <svg width="104" height="104">
+          <defs><linearGradient id="ggrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2ec8ff"/><stop offset="1" stop-color="#7fd8ff"/>
+          </linearGradient></defs>
+          <circle class="bg" cx="52" cy="52" r="46"/>
+          <circle class="fg" id="gauge-fg" cx="52" cy="52" r="46"/>
+        </svg>
+        <div class="gv"><span id="score-num">0</span><small>/ 5.0 综合评分</small></div>
+      </div>
+      <div class="s-bars">
+        <div class="s-row">版型 Design<div class="sb"><i data-w="96%"></i></div></div>
+        <div class="s-row">舒适度 Comfort<div class="sb"><i data-w="93%"></i></div></div>
+        <div class="s-row">贴合度 Fitness<div class="sb"><i data-w="90%"></i></div></div>
+        <div class="s-row">时尚度 Style<div class="sb"><i data-w="88%"></i></div></div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- 右列 -->
+  <div class="side-col" id="col-r">
+  <div class="panel reveal" id="p-stylist" style="animation-delay:.3s">
+    <div class="p-title">AI 造型师建议 <small>AI STYLIST ADVICE</small></div>
+    <div class="st-body">
+      <div class="st-avatar">✦</div>
+      <div id="stylist-note">—</div>
+    </div>
+  </div>
+
+  <div class="panel reveal" id="p-style" style="animation-delay:.4s">
+    <div class="p-title">风格推荐 <small>STYLE RECOMMEND</small></div>
+    <div class="chips">
+      <div class="chip on">通勤商务<small>BUSINESS</small></div>
+      <div class="chip">简约优雅<small>MINIMAL</small></div>
+      <div class="chip">现代极简<small>MODERN</small></div>
+    </div>
+  </div>
+
+  <div class="panel reveal" id="p-acc" style="animation-delay:.5s">
+    <div class="p-title">配饰搭配推荐 <small>ACCESSORIES</small></div>
+    <div class="accs">
+      <div class="acc">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 9v3l2 2M9 3.5h6M9 20.5h6"/></svg>
+        腕表
+      </div>
+      <div class="acc">
+        <svg viewBox="0 0 24 24"><path d="M5 8h14l-1.5 12h-11L5 8zM8.5 8V6a3.5 3.5 0 0 1 7 0v2"/></svg>
+        单肩包
+      </div>
+      <div class="acc">
+        <svg viewBox="0 0 24 24"><path d="M3 16c4-1 6-4 7-7l2 1c.5 2 3 4 7 4.5 1.5.2 2 .8 2 1.5v1H3v-1z"/></svg>
+        小白鞋
+      </div>
+    </div>
+  </div>
+
+  <div class="panel reveal" id="p-radar" style="animation-delay:.6s">
+    <div class="p-title">多款对比 <small>COMPARE LOOKS</small></div>
+    <div class="radar-wrap">
+      <svg id="radar" width="160" height="140" viewBox="0 0 160 140"></svg>
+      <div class="radar-cta">进入对比 ›</div>
+    </div>
+  </div>
+  </div>
+
+  <!-- 中央全息圆柱：固定角度照片（2D，不做 3D） -->
+  <div id="cyl" class="reveal" style="animation-delay:.25s">
+    <div class="tube"><i></i></div>
+    <div class="scanline"></div>
+    <canvas id="particles" width="640" height="800"></canvas>
+    <div class="ghost" id="ghost-l"><img alt=""><span>‹ 上一款</span></div>
+    <div class="ghost" id="ghost-r"><img alt=""><span>下一款 ›</span></div>
+    <div id="photo"></div>
+    <div id="reflection"></div>
+    <div class="base">
+      <div class="ring r4"></div><div class="ring r3"></div><div class="ring r2"></div><div class="ring r1"></div>
+    </div>
+  </div>
+
+  <!-- 底部 -->
+  <button id="back">‹ 返回选衣</button>
+  <div id="dock" class="reveal" style="animation-delay:.7s">
+    <div class="dock-box">
+      <div class="dock-t">一键切换试穿<small>ONE-CLICK SWITCH</small></div>
+      <div class="sw-row">
+        <button class="arrow" id="prev">‹</button>
+        <div class="hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M9.6 12.2V4.9a1.5 1.5 0 0 1 3 0v5.6l4.5.9c1.1.2 1.9 1.2 1.9 2.3v2.1c0 .8-.16 1.5-.5 2.2l-1 2.5H10.2l-3.7-4.6c-.5-.6-.4-1.5.2-2 .6-.6 1.5-.6 2.1 0l.8.8z"/></svg></div>
+        <button class="arrow" id="next">›</button>
+      </div>
+    </div>
+    <div class="dock-box">
+      <div class="dock-t">视角切换<small>VIEW MODE</small></div>
+      <div class="views" id="views">
+        <div class="view on" data-v="front"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.3" r="2.4"/><path d="M12 8c-2.6 0-4.2 1.3-4.6 3.6L6.8 15h2.4l.7 6h4.2l.7-6h2.4l-.6-3.4C15.2 9.3 14.6 8 12 8z"/></svg></div><div class="tx">正面</div></div>
+        <div class="view" data-v="back"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="4.3" r="2.4"/><path d="M12 8c-2.6 0-4.2 1.3-4.6 3.6L6.8 15h2.4l.7 6h4.2l.7-6h2.4l-.6-3.4C15.2 9.3 14.6 8 12 8z"/><path d="M12 9.2v6.4" stroke="#071120" stroke-width="1.1"/></svg></div><div class="tx">背面</div></div>
+        <div class="view" data-v="left"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="10.8" cy="4.3" r="2.4"/><path d="M10.8 8c-2 0-3.2 1.2-3.5 3.2L6.7 15h1.9l.8 6h3l.5-6h1.7l-.8-3.7C13.4 9.2 12.5 8 10.8 8z"/></svg></div><div class="tx">左侧</div></div>
+        <div class="view" data-v="right"><div class="ic"><svg viewBox="0 0 24 24" fill="currentColor" style="transform:scaleX(-1)"><circle cx="10.8" cy="4.3" r="2.4"/><path d="M10.8 8c-2 0-3.2 1.2-3.5 3.2L6.7 15h1.9l.8 6h3l.5-6h1.7l-.8-3.7C13.4 9.2 12.5 8 10.8 8z"/></svg></div><div class="tx">右侧</div></div>
+        <div class="view dis" data-v="360"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="12" cy="8.6" r="1.9" fill="currentColor" stroke="none"/><path d="M12 10.8v3.4" stroke-linecap="round"/><ellipse cx="12" cy="16.2" rx="8.4" ry="3.2" stroke-dasharray="3 2.2"/></svg></div><div class="tx">360°</div></div>
+      </div>
+    </div>
+    <button id="cta">✦ 用当前款生成动态视频</button>
+  </div>
+
+  <div id="steps">
+    <div class="s"><div class="n">1</div>选衣</div><div class="ln"></div>
+    <div class="s on"><div class="n">2</div>照片效果</div><div class="ln"></div>
+    <div class="s"><div class="n">3</div>动态视频</div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="vignette"></div><div id="grain"></div>
+</div>
+
+<script>
+if(location.search.includes('still')){
+  const st = document.createElement('style');
+  st.textContent = '.reveal{animation:none !important;opacity:1 !important;transform:none !important}';
+  document.head.appendChild(st);
+}
+const stage = document.getElementById('stage');
+function fit(){
+  const s = Math.min(innerWidth/1920, innerHeight/1080);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+
+/* ===== 数据（POC 占位；正式版：中央照片 = ComfyUI 换装输出的 4 个角度）
+   顺序与场景①一致（g1–g6），fav 索引跨页面直接对应 ===== */
+const GARMENTS = [
+  {img:'assets/garments/g1.webp', name:'云感 Polo · 燕麦白', price:369, sw:['#e8e8e4','#c9c5bd','#31415a'],
+   note:'浅色系干净利落，衬肤色。搭配同色系裤装可显高，配简约腕表提升整体气场。'},
+  {img:'assets/garments/g2.webp', name:'云感 Polo · 雾霾蓝', price:369, sw:['#a8bdd4','#31415a','#e8e8e4'],
+   note:'雾霾蓝冷调内敛，适合通勤场合。建议下装选深灰或藏青，整体更显高级。'},
+  {img:'assets/garments/g3.webp', name:'云感 Polo · 藏青', price:369, sw:['#31415a','#a8bdd4','#e8e8e4'],
+   note:'藏青 Polo 与卡其长裤是经典的商务休闲组合，非常适合您的身材比例。建议袖口自然落肩，配白色球鞋提亮整体。'},
+  {img:'assets/garments/g4.webp', name:'云感 Polo · 浅卡其', price:369, sw:['#d8c9a8','#8aa392','#e8e8e4'],
+   note:'暖调卡其温和亲切，休闲度假氛围感强，配白色球鞋很出彩。'},
+  {img:'assets/garments/g5.webp', name:'云感 Polo · 墨绿', price:369, sw:['#8aa392','#31415a','#c9c5bd'],
+   note:'低饱和墨绿低调有记忆点，很衬亚洲肤色，整体搭配控制在三个颜色以内。'},
+  {img:'assets/garments/g6.webp', name:'云感 Polo · 燕麦灰', price:369, sw:['#c9c5bd','#31415a','#e8e8e4'],
+   note:'中性灰调最显质感，四季百搭，内搭外穿皆宜。'},
+];
+
+/* ===== 漏斗：只对场景①收藏进试穿间的款式生成照片（?fav=逗号分隔全局索引） ===== */
+const qs = new URLSearchParams(location.search);
+const FAV = (qs.get('fav')||'').split(',').filter(s=>s!=='').map(Number)
+  .filter(n=>Number.isInteger(n) && n>=0 && n<GARMENTS.length);
+const LIST_IDX = FAV.length ? FAV : GARMENTS.map((_,i)=>i);   // 全局索引（无参数时回退全量，便于直接打开演示）
+const LIST = LIST_IDX.map(i=>GARMENTS[i]);
+const favParam = LIST_IDX.join(',');
+
+/* 顾客 4 角度照片（POC：顾客原照占位；正式版为换装后 4 角度输出） */
+const VIEWS = { front:'assets/customer/b.webp', back:'assets/customer/d.webp',
+                left:'assets/customer/a.webp', right:'assets/customer/c.webp' };
+
+/* ===== 照片视角切换（2D 交叉淡入，不做 3D） ===== */
+const photoBox = document.getElementById('photo');
+const reflBox = document.getElementById('reflection');
+const imgs = {}, rimgs = {};
+for(const [k, src] of Object.entries(VIEWS)){
+  const im = new Image(); im.src = src; photoBox.appendChild(im); imgs[k] = im;
+  const rm = new Image(); rm.src = src; reflBox.appendChild(rm); rimgs[k] = rm;
+}
+let curView = 'front';
+function showView(v){
+  curView = v;
+  for(const k in imgs){ imgs[k].classList.toggle('show', k===v); rimgs[k].classList.toggle('show', k===v); }
+  document.querySelectorAll('.view').forEach(el=>el.classList.toggle('on', el.dataset.v===v));
+  const cyl = document.getElementById('photo');
+  cyl.classList.remove('flicker'); void cyl.offsetWidth; cyl.classList.add('flicker');
+}
+document.querySelectorAll('.view').forEach(el=>{
+  el.onclick = ()=>{
+    if(el.dataset.v === '360'){ showToast('照片模式为固定角度 · 生成动态视频后可 360° 环绕'); return; }
+    showView(el.dataset.v);
+  };
+});
+showView('front');
+
+/* ===== 候选款轮播 + 一键切换（仅遍历试穿间收藏的款式） ===== */
+const candList = document.getElementById('cand-list');
+LIST.forEach((g,i)=>{
+  const d = document.createElement('div');
+  d.className = 'cand';
+  d.innerHTML = `<img src="${g.img}" alt="${g.name}">`;
+  d.onclick = ()=>select(i);
+  candList.appendChild(d);
+});
+
+const lookImg = document.getElementById('look-img');
+const lookName = document.getElementById('look-name');
+const lookPrice = document.querySelector('#look-price span');
+const lookSw = document.getElementById('look-sw');
+const stylistNote = document.getElementById('stylist-note');
+const matchNum = document.getElementById('match-num');
+const matchFill = document.getElementById('match-fill');
+const scoreNum = document.getElementById('score-num');
+const gaugeFg = document.getElementById('gauge-fg');
+let cur = 0;
+
+function animateNum(el, to, suffix, dec){
+  const from = parseFloat(el.textContent) || 0, t0 = performance.now();
+  (function step(t){
+    const p = Math.min((t - t0)/700, 1), v = from + (to - from) * (1 - Math.pow(1-p, 3));
+    el.innerHTML = (dec ? v.toFixed(1) : Math.round(v)) + (suffix || '');
+    if(p < 1) requestAnimationFrame(step);
+  })(t0);
+}
+
+function select(i){
+  cur = ((i % LIST.length) + LIST.length) % LIST.length;
+  const g = LIST[cur];
+  document.querySelectorAll('.cand').forEach((c,j)=>c.classList.toggle('on', j===cur));
+  document.getElementById('cand-count').textContent = `${cur+1} / ${LIST.length}`;
+  lookImg.src = g.img;
+  lookName.textContent = g.name;
+  animateNum(lookPrice, g.price);
+  lookSw.innerHTML = g.sw.map(c=>`<i style="background:${c}"></i>`).join('');
+  stylistNote.textContent = g.note;
+  animateNum(matchNum, 92, '<small>%</small>');
+  matchFill.style.width = '92%';
+  animateNum(scoreNum, 4.7, '', true);
+  gaugeFg.style.strokeDashoffset = 289 * (1 - 4.7/5);
+  document.querySelectorAll('.s-bars .sb i').forEach(el=>el.style.width = el.dataset.w);
+  const gl = document.getElementById('ghost-l'), gr = document.getElementById('ghost-r');
+  if(LIST.length > 1){
+    gl.querySelector('img').src = LIST[(cur+LIST.length-1)%LIST.length].img;
+    gr.querySelector('img').src = LIST[(cur+1)%LIST.length].img;
+    gl.classList.add('show'); gr.classList.add('show');
+  }
+  showView(curView);
+  drawRadar();
+}
+document.querySelector('.radar-cta').onclick = ()=>showToast('◈ 多款对比 · 正式版接入后开放完整对比视图');
+document.getElementById('prev').onclick = ()=>select(cur-1);
+document.getElementById('next').onclick = ()=>select(cur+1);
+
+/* ===== 雷达图 ===== */
+function drawRadar(){
+  const svg = document.getElementById('radar');
+  const cx=80, cy=74, R=52, N=5;
+  const labels=['版型','舒适','贴合','面料','时尚'];
+  const vals=[.95,.9,.88,.92,.85];
+  const pt=(k,r)=>{const a=-Math.PI/2 + k*2*Math.PI/N; return [cx+r*Math.cos(a), cy+r*Math.sin(a)];};
+  let s='';
+  for(const f of [1,.66,.33]){
+    s += `<polygon points="${[...Array(N)].map((_,k)=>pt(k,R*f).join(',')).join(' ')}"
+      fill="none" stroke="rgba(127,216,255,.18)" stroke-width="1"/>`;
+  }
+  for(let k=0;k<N;k++){
+    const [x,y]=pt(k,R); s += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(127,216,255,.14)"/>`;
+    const [lx,ly]=pt(k,R+13);
+    s += `<text x="${lx}" y="${ly+3}" font-size="10" fill="#8fb8cf" text-anchor="middle" letter-spacing="1">${labels[k]}</text>`;
+  }
+  s += `<polygon points="${vals.map((v,k)=>pt(k,R*v).join(',')).join(' ')}"
+    fill="rgba(46,200,255,.22)" stroke="#2ec8ff" stroke-width="1.5"
+    style="filter:drop-shadow(0 0 6px rgba(46,200,255,.5))"/>`;
+  s += vals.map((v,k)=>{const [x,y]=pt(k,R*v);
+    return `<circle cx="${x}" cy="${y}" r="2.4" fill="#7fd8ff"/>`}).join('');
+  svg.innerHTML = s;
+}
+
+/* toast */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg){
+  toast.textContent = msg; toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>toast.classList.remove('show'), 2600);
+}
+
+/* 导航（fav 双向传递，返回不丢试穿间状态；视频只用当前这一款生成） */
+document.getElementById('back').onclick = ()=>
+  location.href = `index.html?still&sel=${LIST_IDX[cur]}&fav=${favParam}`;
+document.getElementById('cta').onclick = ()=>{
+  showToast(`✦ 正在为「${LIST[cur].name}」生成户外动态视频…`);
+  setTimeout(()=>location.href = `scene3.html?g=${LIST_IDX[cur]}&fav=${favParam}`, 1000);
+};
+
+/* 粒子 */
+const cv = document.getElementById('particles'), ctx = cv.getContext('2d');
+const P = Array.from({length:60}, ()=>spawn(true));
+function spawn(anyY){
+  return { x: 140 + Math.random()*360, y: anyY ? Math.random()*720 : 750,
+    r: .6 + Math.random()*1.8, v: .25 + Math.random()*.85,
+    drift: (Math.random()-.5)*.22, a: .15 + Math.random()*.5 };
+}
+(function tick(){
+  ctx.clearRect(0,0,640,800);
+  for(let i=0;i<P.length;i++){
+    const p = P[i];
+    p.y -= p.v; p.x += p.drift;
+    const fade = p.y < 200 ? p.y/200 : 1;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7);
+    ctx.fillStyle = `rgba(127,216,255,${p.a * fade})`;
+    ctx.shadowColor = 'rgba(46,200,255,.8)'; ctx.shadowBlur = 6;
+    ctx.fill();
+    if(p.y < 60) P[i] = spawn(false);
+  }
+  requestAnimationFrame(tick);
+})();
+
+/* 初始：?sel=n 指定试穿间内第 n 款；?g=全局索引（场景③返回时用）；?view= 指定视角 */
+let initIdx = Math.max(LIST_IDX.indexOf(2), 0);   // 直接打开时默认藏青（顾客照片实穿款）
+if(qs.has('g') && LIST_IDX.includes(+qs.get('g'))) initIdx = LIST_IDX.indexOf(+qs.get('g'));
+else if(qs.has('sel')) initIdx = Math.min(parseInt(qs.get('sel'),10)||0, LIST.length-1);
+select(initIdx);
+if(VIEWS[qs.get('view')]) showView(qs.get('view'));
+</script>
+</body>
+</html>

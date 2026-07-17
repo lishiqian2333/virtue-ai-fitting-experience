@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>全息选衣 · 3D Lab · 方案对比</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ice:#7fd8ff; --cyan:#2ec8ff; --amber:#ffa040;
+    --ink:#dff2ff; --ink-dim:#8fb8cf;
+    --glass:rgba(10,24,44,.5); --glass-line:rgba(127,216,255,.22);
+    --font-num:"DIN Alternate","Avenir Next Condensed",sans-serif;
+    --font-cn:"PingFang SC","Hiragino Sans GB",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;min-height:100%;background:
+    radial-gradient(1200px 700px at 50% 0%, rgba(28,70,120,.3), transparent 65%),
+    radial-gradient(1600px 1000px at 50% 50%, #071120 0%, #030812 55%, #01040a 100%);
+    background-attachment:fixed}
+  body{font-family:var(--font-cn);color:var(--ink);padding:48px 56px 64px}
+
+  h1{font-size:26px;letter-spacing:8px;font-weight:600;color:#eaf7ff;
+    text-shadow:0 0 20px rgba(46,200,255,.55);text-align:center}
+  .sub{margin-top:8px;text-align:center;font-size:12px;letter-spacing:3px;color:var(--ink-dim);
+    font-family:var(--font-num)}
+  .hint{margin-top:6px;text-align:center;font-size:12px;letter-spacing:2px;color:var(--ink-dim)}
+  .hint b{color:var(--amber);font-weight:normal}
+
+  .grid{margin:40px auto 0;max-width:1720px;display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(640px, 1fr));gap:34px}
+  .card{position:relative;border:1px solid var(--glass-line);border-radius:16px;overflow:hidden;
+    background:var(--glass);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    box-shadow:0 12px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(127,216,255,.12);
+    transition:.3s;display:block;text-decoration:none;color:inherit}
+  .card:hover{border-color:rgba(127,216,255,.55);box-shadow:0 12px 50px rgba(46,200,255,.18);
+    transform:translateY(-4px)}
+  .card::before,.card::after{content:"";position:absolute;width:16px;height:16px;z-index:5;
+    border-color:var(--ice);border-style:solid;opacity:.8}
+  .card::before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-radius:16px 0 0 0}
+  .card::after{right:-1px;bottom:-1px;border-width:0 2px 2px 0;border-radius:0 0 16px 0}
+
+  .shot{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#02060d}
+  .shot iframe{position:absolute;left:0;top:0;width:1920px;height:1080px;border:0;
+    transform-origin:0 0;pointer-events:none}
+  .shot .veil{position:absolute;inset:0;background:linear-gradient(to bottom, transparent 65%, rgba(2,6,13,.8))}
+
+  .meta{padding:18px 24px 20px;display:flex;align-items:baseline;gap:14px}
+  .tag{font-family:var(--font-num);font-size:12px;letter-spacing:2px;color:var(--amber);
+    border:1px solid rgba(255,160,64,.5);border-radius:999px;padding:4px 14px;white-space:nowrap}
+  .name{font-size:18px;font-weight:600;color:#fff;letter-spacing:2px}
+  .desc{margin-left:auto;font-size:12px;color:var(--ink-dim);letter-spacing:1px;text-align:right;line-height:1.7}
+</style>
+</head>
+<body>
+<h1>三维空间感 · 方案对比</h1>
+<div class="sub">3D LAB · SCENE ① UPGRADE · 2026-07-16</div>
+<div class="hint">预览为实时页面缩放（<b>?still</b> 静止模式）· 点击卡片进入完整体验</div>
+
+<div class="grid">
+  <a class="card" href="../index.html">
+    <div class="shot"><iframe src="../index.html?still" loading="lazy" scrolling="no"></iframe><div class="veil"></div></div>
+    <div class="meta"><span class="tag">基准</span><span class="name">原版 · 二维平面</span>
+      <span class="desc">当前 POC 现状<br>面板/衣架均贴屏</span></div>
+  </a>
+  <a class="card" href="a-css3d.html">
+    <div class="shot"><iframe src="a-css3d.html?still" loading="lazy" scrolling="no"></iframe><div class="veil"></div></div>
+    <div class="meta"><span class="tag">方案 A</span><span class="name">纯 CSS 3D 场景化</span>
+      <span class="desc">真3D地板/顶灯 · 衣架环绕 · 面板内倾<br>相机漂移视差 · 零依赖</span></div>
+  </a>
+  <a class="card" href="b-threejs.html">
+    <div class="shot"><iframe src="b-threejs.html?still" loading="lazy" scrolling="no"></iframe><div class="veil"></div></div>
+    <div class="meta"><span class="tag">方案 B</span><span class="name">three.js + CSS3D 混合</span>
+      <span class="desc">WebGL 环境 + 真透视相机环绕<br>HTML 面板挂进 3D 场景 · 引入依赖</span></div>
+  </a>
+  <a class="card" href="c-parallax.html">
+    <div class="shot"><iframe src="c-parallax.html?still" loading="lazy" scrolling="no"></iframe><div class="veil"></div></div>
+    <div class="meta"><span class="tag">方案 C</span><span class="name">2.5D 分层视差</span>
+      <span class="desc">布局不变 · 背景多层随指针/时间漂移<br>最低成本参照组</span></div>
+  </a>
+</div>
+
+<script>
+/* iframe 按容器宽度等比缩放（1920 → 卡片宽） */
+function fit(){
+  document.querySelectorAll('.shot').forEach(s=>{
+    const f = s.querySelector('iframe');
+    f.style.transform = `scale(${s.clientWidth / 1920})`;
+  });
+}
+addEventListener('resize', fit);
+addEventListener('load', fit);
+fit();
+</script>
+</body>
+</html>
