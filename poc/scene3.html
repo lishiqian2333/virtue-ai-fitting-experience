@@ -189,7 +189,7 @@
   <div id="vbar" class="reveal" style="animation-delay:.6s">
     <div id="vlive"><i></i>LIVE SCENE</div>
     <div id="title">您的专属换装视频<small id="sub">云感 POLO · 古城广场 · 360° 环绕</small></div>
-    <button id="again">↻ 换场景重新生成</button>
+    <button id="again">删除本人形象</button>
     <button id="done">✦ 完成体验</button>
   </div>
 
@@ -402,12 +402,7 @@ addEventListener('blur', ()=>finishDrag());
 /* 导航（fav / g 回传，返回时试穿间与当前款不丢失） */
 document.getElementById('back').onclick = ()=>
   location.href = `scene2.html?still&g=${gIdx}${favParam ? '&fav='+favParam : ''}`;
-document.getElementById('again').onclick = ()=>{
-  setScene((curScene+1)%SCENES.length); showFrame(0);
-  document.getElementById('flash').style.animation = 'none';
-  void document.getElementById('flash').offsetWidth;
-  document.getElementById('flash').style.animation = '';
-};
+document.getElementById('again').onclick = ()=>{};
 document.getElementById('done').onclick = ()=>location.replace('../index.html');
 </script>
 </body>

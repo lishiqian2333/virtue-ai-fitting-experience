@@ -253,7 +253,12 @@
     box-shadow:0 0 30px rgba(255,160,64,.3);backdrop-filter:blur(10px)}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* 颗粒噪点 + 暗角 */
+  /* 返回首页按钮 */
+  #back-home{position:absolute;left:44px;top:34px;z-index:35;padding:10px 18px;border-radius:10px;
+    border:1px solid rgba(127,216,255,.3);background:var(--glass);backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);color:var(--ink-dim);font-size:13px;letter-spacing:2px;
+    cursor:pointer;transition:.2s;font-family:var(--font-cn)}
+  #back-home:hover{color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35);border-color:rgba(127,216,255,.55)}
   #grain{position:absolute;inset:0;z-index:50;pointer-events:none;opacity:.05;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")}
   #vignette{position:absolute;inset:0;z-index:49;pointer-events:none;
@@ -268,6 +273,8 @@
 <div id="stage">
   <div class="dome"></div><div class="dome d2"></div>
   <div class="floor"></div><div class="floor-ring"></div>
+
+  <button id="back-home">‹ 返回首页</button>
 
   <header class="reveal" style="animation-delay:.15s">
     <div class="bar">
@@ -592,7 +599,9 @@ function spawn(anyY){
   requestAnimationFrame(tick);
 })();
 
-/* 初始（?sel=n 可指定默认选中款式，便于演示） */
+/* 返回首页 */
+document.getElementById('back-home').onclick = () => location.href = '../index.html';
+
 showFrame(0);
 const initIdx = Math.min(parseInt(new URLSearchParams(location.search).get('sel')||'0',10)||0, GARMENTS.length-1);
 select(initIdx, document.querySelectorAll('.g-card')[initIdx]);
