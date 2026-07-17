@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
+<script>
+(() => {
+  const navigation = performance.getEntriesByType('navigation')[0];
+  const isReload = navigation
+    ? navigation.type === 'reload'
+    : performance.navigation && performance.navigation.type === 1;
+  if (isReload) location.replace('../index.html');
+})();
+</script>
 <meta charset="UTF-8">
 <title>全息选衣 · POC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
