@@ -12,7 +12,7 @@
 </script>
 <meta charset="UTF-8">
 <link rel="icon" href="data:,">
-<title>户外动态视频 · POC</title>
+<title>动态试穿与环境融合 · POC</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
   :root{
@@ -88,8 +88,24 @@
   .sc-t{font-size:12px;letter-spacing:3px;color:var(--ice);margin-bottom:2px;text-shadow:0 1px 8px rgba(0,0,0,.9)}
   .sc-t small{font-family:var(--font-num);font-size:9px;color:var(--ink-dim);margin-left:4px;text-shadow:0 1px 8px rgba(0,0,0,.9)}
 
+  /* ===== 右侧：系列与服装分类 ===== */
+  #wardrobe{position:absolute;right:44px;top:118px;z-index:30;width:270px;padding:16px;
+    border-radius:14px;background:var(--glass);border:1px solid var(--glass-line);backdrop-filter:blur(12px)}
+  #wardrobe .wt{font-size:13px;letter-spacing:2px;color:var(--ice)}
+  #wardrobe .wt small{display:block;margin-top:4px;font-family:var(--font-num);font-size:9px;color:var(--ink-dim)}
+  #series-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:12px}
+  .series-tab{height:34px;border-radius:7px;border:1px solid rgba(127,216,255,.22);background:rgba(46,200,255,.04);
+    color:var(--ink-dim);font-size:11px;cursor:pointer;transition:.2s}
+  .series-tab:hover,.series-tab.on{border-color:var(--cyan);background:rgba(46,200,255,.18);color:#fff}
+  #look-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .look{display:grid;grid-template-columns:72px 1fr;align-items:center;min-height:76px;overflow:hidden;border-radius:9px;
+    border:1px solid rgba(127,216,255,.18);background:rgba(5,15,27,.52);color:var(--ink-dim);text-align:left;cursor:pointer;transition:.2s}
+  .look:hover,.look.on{border-color:var(--cyan);background:rgba(46,200,255,.13);color:#fff;box-shadow:0 0 16px rgba(46,200,255,.18)}
+  .look img{width:72px;height:76px;object-fit:contain;background:#080c12}
+  .look span{padding:8px 10px;font-size:12px;letter-spacing:1px;line-height:1.5}
+  .look span small{display:block;margin-top:3px;font-family:var(--font-num);font-size:9px;color:var(--ink-dim)}
   /* ===== 右侧：保存面板 ===== */
-  #save{position:absolute;right:44px;top:50%;translate:0 -50%;z-index:30;width:196px;
+  #save{position:absolute;right:44px;top:auto;bottom:150px;translate:0 0;z-index:30;width:196px;
     padding:16px;border-radius:14px;background:var(--glass);border:1px solid var(--glass-line);
     backdrop-filter:blur(12px);text-align:center}
   #save .t{font-size:13px;letter-spacing:2px;color:var(--ice);margin-bottom:12px}
@@ -119,10 +135,11 @@
     box-shadow:0 0 22px rgba(255,160,64,.25)}
   #done:hover{box-shadow:0 0 34px rgba(255,160,64,.55);color:#fff}
 
-  #back{position:absolute;left:44px;bottom:26px;z-index:31;padding:11px 20px;border-radius:11px;
+  #back,#home{position:absolute;bottom:26px;z-index:31;padding:11px 20px;border-radius:11px;
     border:1px solid rgba(127,216,255,.3);background:var(--glass);backdrop-filter:blur(12px);
     color:var(--ink-dim);font-size:13px;letter-spacing:2px;cursor:pointer;transition:.2s}
-  #back:hover{color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35)}
+  #back{left:44px}#home{left:240px}
+  #back:hover,#home:hover{color:#fff;box-shadow:0 0 16px rgba(46,200,255,.35)}
   #steps{position:absolute;right:44px;bottom:34px;z-index:31;display:flex;gap:8px;align-items:center;
     font-family:var(--font-num);font-size:11px;letter-spacing:1px;color:var(--ink-dim)}
   #steps .s{display:flex;align-items:center;gap:5px}
@@ -169,36 +186,41 @@
 
   <div id="head" class="reveal" style="animation-delay:.2s">
     <div class="l1">AI FITTING ROOM 2.0</div>
-    <div class="tag">SCENE 03 · 户外动态视频展示</div>
+    <div class="tag">STEP 02 · 动态试穿与环境融合</div>
   </div>
-  <div id="rec" class="reveal" style="animation-delay:.3s"><i></i>AI GENERATED · 1080P</div>
+  <div id="rec" class="reveal" style="animation-delay:.3s"><i></i>DYNAMIC FITTING PREVIEW · DEMO</div>
 
   <div id="scenes" class="reveal" style="animation-delay:.4s">
     <div><div class="sc-t">户外场景<small>OUTDOOR SCENE</small></div></div>
     <!-- 缩略图由 SCENES 数据动态生成 -->
   </div>
 
+  <div id="wardrobe" class="reveal" style="animation-delay:.45s">
+    <div class="wt">服装系列<small>COLLECTION & LOOKS</small></div>
+    <div id="series-tabs"></div>
+    <div id="look-list"></div>
+  </div>
   <div id="save" class="reveal" style="animation-delay:.5s">
-    <div class="t">扫码带走视频</div>
+    <div class="t">扫码保存动态结果</div>
     <div id="qr"><canvas id="qr-cv" width="104" height="104"></canvas></div>
-    <div class="d">手机扫码即可保存<br>您的专属换装视频</div>
+    <div class="d">正式版将支持扫码保存<br>当前环境融合结果</div>
     <div class="hint">VIDEO ID · WX-20260715</div>
   </div>
 
-  <div id="wm">✦ AI 换装 · Wan 2.2 生成</div>
+  <div id="wm">✦ 360° 动态试穿 · 环境融合演示</div>
 
   <div id="vbar" class="reveal" style="animation-delay:.6s">
     <div id="vlive"><i></i>LIVE SCENE</div>
-    <div id="title">您的专属换装视频<small id="sub">云感 POLO · 古城广场 · 360° 环绕</small></div>
+    <div id="title">动态试穿与环境融合<small id="sub">云感 POLO · 户外场景 · 360° 环绕</small></div>
     <button id="again">删除本人形象</button>
     <button id="done">✦ 完成体验</button>
   </div>
 
-  <button id="back">‹ 返回照片效果</button>
+  <button id="back">‹ 返回 3D 试衣</button>
+  <button id="home">返回方案首页</button>
   <div id="steps">
-    <div class="s"><div class="n">1</div>选衣</div><div class="ln"></div>
-    <div class="s"><div class="n">2</div>照片效果</div><div class="ln"></div>
-    <div class="s on"><div class="n">3</div>动态视频</div>
+    <div class="s"><div class="n">1</div>3D 试衣</div><div class="ln"></div>
+    <div class="s on"><div class="n">2</div>动态试穿与环境融合</div>
   </div>
 
   <div id="vignette"></div><div id="grain"></div>
@@ -265,11 +287,23 @@ SCENES.forEach((s,i)=>{
   scBox.appendChild(card);
 });
 
-/* ===== 漏斗末端：场景②选定的那一款（?g=全局索引），fav 用于返回时还原试穿间 ===== */
-const GNAMES = ['云感 Polo · 燕麦白','云感 Polo · 雾霾蓝','云感 Polo · 藏青',
-                '云感 Polo · 浅卡其','云感 Polo · 墨绿','云感 Polo · 燕麦灰'];
+/* ===== 三个系列、每个系列两套服装；?g= 全局造型索引 ===== */
+const LOOKS = [
+  {key:'r1',series:'daily',name:'日常通勤造型 01',image:'R1.png'},
+  {key:'r2',series:'daily',name:'日常通勤造型 02',image:'R2.png'},
+  {key:'h1',series:'urban',name:'城市户外造型 01',image:'H1.png'},
+  {key:'h2',series:'urban',name:'城市户外造型 02',image:'H2.png'},
+  {key:'s1',series:'holiday',name:'生活假日造型 01',image:'S1.png'},
+  {key:'s2',series:'holiday',name:'生活假日造型 02',image:'S2.png'},
+];
+const SERIES = [
+  {key:'daily',name:'日常通勤',en:'DAILY',looks:[0,1]},
+  {key:'urban',name:'城市户外',en:'URBAN',looks:[2,3]},
+  {key:'holiday',name:'生活假日',en:'HOLIDAY',looks:[4,5]},
+];
+const GNAMES = LOOKS.map(look=>look.name);
 const qs = new URLSearchParams(location.search);
-const gIdx = Math.min(Math.max(parseInt(qs.get('g')||'2',10)||0, 0), GNAMES.length-1);
+let gIdx = Math.min(Math.max(parseInt(qs.get('g')||'0',10)||0, 0), LOOKS.length-1);
 const favParam = qs.get('fav') || '';
 let curScene = 0;
 function setScene(i){
@@ -286,15 +320,22 @@ document.querySelectorAll('.sc').forEach(el=>el.onclick = ()=>setScene(+el.datas
 /* ?scene=0|1 指定默认场景（演示/截图用） */
 setScene(Math.min(parseInt(qs.get('scene')||'0',10)||0, SCENES.length-1));
 
-/* ===== 生成视频循环呈现：序列帧（POC 用 360° 帧模拟；正式版为 Wan 2.2 生成的 mp4 loop 播放）
-   作为“活的场景”持续环绕展示，不提供播放器操作 ===== */
+/* ===== 按当前系列与服装切换对应的 360° 序列帧 ===== */
 const FRAMES = 60, FPS_MS = 90;
-const frames = [];
-for(let i=1;i<=FRAMES;i++){
-  const im = new Image();
-  im.src = `assets/seq/${String(i).padStart(3,'0')}.webp`;
-  frames.push(im);
+const frameCache = new Map();
+function loadSequence(key){
+  if(frameCache.has(key)) return frameCache.get(key);
+  const loaded = [];
+  for(let i=1;i<=FRAMES;i++){
+    const im = new Image();
+    im.src = `assets/seq/${key}/${String(i).padStart(3,'0')}.webp`;
+    loaded.push(im);
+  }
+  frameCache.set(key, loaded);
+  return loaded;
 }
+let sequenceKey = LOOKS[gIdx].key;
+let frames = loadSequence(sequenceKey);
 const personImg = document.getElementById('person-img');
 const preflImg = document.getElementById('prefl-img');
 const person = document.getElementById('person');
@@ -308,9 +349,8 @@ let pointerStartX = 0, pointerStartY = 0, hasDragged = false;
 
 function showFrame(i){
   cur = ((i % FRAMES) + FRAMES) % FRAMES;
-  if(frames[cur].complete && frames[cur].naturalWidth){
-    personImg.src = frames[cur].src; preflImg.src = frames[cur].src;
-  }
+  personImg.src = frames[cur].src;
+  preflImg.src = frames[cur].src;
 }
 setInterval(()=>{ if(autoRotate && !dragging) showFrame(cur+1); }, FPS_MS);
 showFrame(0);
@@ -402,7 +442,9 @@ addEventListener('blur', ()=>finishDrag());
 
 /* 导航（fav / g 回传，返回时试穿间与当前款不丢失） */
 document.getElementById('back').onclick = ()=>
-  location.href = `scene2.html?still&g=${gIdx}${favParam ? '&fav='+favParam : ''}`;
+  location.href = '3d-fitting.html?g=' + gIdx;
+document.getElementById('home').onclick = ()=>
+  location.href = '../index.html';
 document.getElementById('again').onclick = ()=>{};
 document.getElementById('done').onclick = ()=>location.replace('../index.html');
 </script>

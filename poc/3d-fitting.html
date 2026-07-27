@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><link rel="icon" href="data:,">
+<title>AI 3D 智能试衣间</title><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="3d-fitting.css">
+</head>
+<body><div id="stage">
+<header><div class="brand"><div class="mark">AI</div><div><strong>AI 3D 智能试衣间</strong><small>AI 3D VIRTUAL FITTING</small></div></div><div class="head-actions"><a class="home" href="../index.html">返回方案首页</a><button>▣ 我的数据</button><button>♙ 人体数据</button><button>⚙ 设置</button></div></header>
+<aside id="collections" class="panel"><h2>选择系列<small>COLLECTION</small></h2><div class="collection-list" id="collection-list"></div></aside>
+<main id="viewer"><div id="person" tabindex="0" aria-label="人物自动旋转，按住并左右拖动可查看不同角度"><img id="person-img" src="assets/seq/r1/001.webp" alt="您的专属 3D 数字人体" draggable="false"></div><div class="scan"></div>
+<section class="analysis"><h3>AI试穿分析<small>AI FITTING ANALYSIS</small></h3><div class="metric"><i>⌁</i><div><small>尺码匹配度</small><strong id="match">96%</strong></div></div><div class="metric"><i>♙</i><div><small>版型适配</small><strong>合身</strong></div></div><div class="metric"><i>♧</i><div><small>肩部适配</small><strong>良好</strong></div></div><div class="metric"><i>⌄</i><div><small>腰围适配</small><strong>舒适</strong></div></div><div class="metric"><i>▦</i><div><small>推荐尺码</small><strong>L</strong></div></div></section>
+<div class="identity"><strong>您的专属 3D 数字人体</strong><small>左右拖动人物，查看造型的 360° 试穿效果</small></div></main>
+<aside id="outfits" class="panel"><h2 class="outfit-title">当前系列 · <b id="series-name">日常通勤系列</b><small>OUTFIT SELECTION</small></h2><div class="outfit-list" id="outfit-list"></div></aside><button id="continue">查看动态试穿效果 →</button><div id="steps"><span class="on"><b>1</b> 3D 试衣</span><i></i><span><b>2</b> 动态场景展示</span></div><div id="toast"></div></div>
+<script src="3d-fitting.js"></script></body></html>
