@@ -73,13 +73,15 @@
   @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 
   /* ===== 场景切换（左侧缩略图） ===== */
-  #scenes{position:absolute;left:44px;top:50%;translate:0 -50%;z-index:30;display:flex;flex-direction:column;gap:14px}
-  .sc{position:relative;width:190px;border-radius:12px;overflow:hidden;cursor:pointer;
+  #scenes{position:absolute;left:44px;top:50%;translate:0 -50%;z-index:30;display:grid;
+    grid-template-columns:repeat(2,154px);gap:9px}
+  #scenes>div:first-child{grid-column:1/-1}
+  .sc{position:relative;width:154px;border-radius:10px;overflow:hidden;cursor:pointer;
     border:1px solid rgba(127,216,255,.25);transition:.25s;background:var(--glass);
     backdrop-filter:blur(10px)}
-  .sc img{display:block;width:100%;height:96px;object-fit:cover;opacity:.85;transition:.25s}
-  .sc .nm{padding:8px 12px;font-size:12px;letter-spacing:2px;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
-  .sc .nm small{font-family:var(--font-num);font-size:9px;letter-spacing:1px;opacity:.7}
+  .sc img{display:block;width:100%;height:62px;object-fit:cover;opacity:.85;transition:.25s}
+  .sc .nm{padding:6px 8px;font-size:11px;letter-spacing:1px;color:var(--ink-dim);display:flex;justify-content:space-between;align-items:center}
+  .sc .nm small{font-family:var(--font-num);font-size:8px;letter-spacing:.5px;opacity:.7}
   .sc:hover img{opacity:1}
   .sc.on{border-color:var(--cyan);box-shadow:0 0 22px rgba(46,200,255,.45)}
   .sc.on .nm{color:#fff}
@@ -191,7 +193,7 @@
   <div id="rec" class="reveal" style="animation-delay:.3s"><i></i>DYNAMIC FITTING PREVIEW · DEMO</div>
 
   <div id="scenes" class="reveal" style="animation-delay:.4s">
-    <div><div class="sc-t">户外场景<small>OUTDOOR SCENE</small></div></div>
+    <div><div class="sc-t">环境场景<small>ENVIRONMENTS · 10</small></div></div>
     <!-- 缩略图由 SCENES 数据动态生成 -->
   </div>
 
@@ -275,6 +277,26 @@ const SCENES = [
    /* 暖烛光门廊：轻微 sepia 偏暖 */
    person:'brightness(.87) contrast(1.05) saturate(.92) sepia(.15) drop-shadow(0 6px 14px rgba(0,0,0,.55))',
    refl:.26, shadow:.95},
+  {img:'assets/outdoor/office-lobby.jpg', name:'商务大堂', en:'OFFICE', pos:'50% 55%',
+   grade:'linear-gradient(to bottom, rgba(12,22,30,.16), transparent 38%, transparent 68%, rgba(18,22,24,.24))',
+   person:'brightness(1.06) contrast(.98) saturate(.9) drop-shadow(0 7px 13px rgba(32,38,42,.32))',
+   refl:.3, shadow:.58},
+  {img:'assets/outdoor/urban-street.jpg', name:'城市街区', en:'URBAN', pos:'50% 58%',
+   grade:'linear-gradient(to bottom, rgba(8,18,30,.18), transparent 36%, transparent 66%, rgba(12,18,24,.3))',
+   person:'brightness(1.01) contrast(1.06) saturate(.94) drop-shadow(0 8px 13px rgba(12,18,24,.38))',
+   refl:.08, shadow:.7},
+  {img:'assets/outdoor/art-mall.jpg', name:'艺术商场', en:'ART MALL', pos:'50% 54%',
+   grade:'linear-gradient(to bottom, rgba(24,18,12,.12), transparent 38%, transparent 70%, rgba(18,14,10,.2))',
+   person:'brightness(1.08) contrast(.98) saturate(.92) sepia(.04) drop-shadow(0 7px 12px rgba(30,24,18,.28))',
+   refl:.34, shadow:.52},
+  {img:'assets/outdoor/seaside.jpg', name:'海滨步道', en:'SEASIDE', pos:'50% 61%',
+   grade:'linear-gradient(to bottom, rgba(16,44,72,.1), transparent 40%, transparent 68%, rgba(38,30,18,.2))',
+   person:'brightness(1.09) contrast(1.02) saturate(.98) drop-shadow(0 8px 12px rgba(30,28,22,.3))',
+   refl:.06, shadow:.62},
+  {img:'assets/outdoor/lakeside.jpg', name:'森林湖畔', en:'LAKESIDE', pos:'50% 60%',
+   grade:'linear-gradient(to bottom, rgba(8,28,12,.18), transparent 36%, transparent 65%, rgba(10,20,10,.34))',
+   person:'brightness(.98) contrast(1.05) saturate(.92) hue-rotate(-3deg) drop-shadow(0 8px 14px rgba(8,18,8,.42))',
+   refl:.08, shadow:.76},
 ];
 const bgBox = document.getElementById('bg');
 const scBox = document.getElementById('scenes');
@@ -317,7 +339,7 @@ function setScene(i){
   document.getElementById('sub').textContent = `${GNAMES[gIdx]} · ${SCENES[i].name} · 360° 环绕`;
 }
 document.querySelectorAll('.sc').forEach(el=>el.onclick = ()=>setScene(+el.dataset.i));
-/* ?scene=0|1 指定默认场景（演示/截图用） */
+/* ?scene=0..9 指定默认场景（演示/截图用） */
 setScene(Math.min(parseInt(qs.get('scene')||'0',10)||0, SCENES.length-1));
 
 /* ===== 按当前系列与服装切换对应的 360° 序列帧 ===== */
